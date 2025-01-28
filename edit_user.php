@@ -9,29 +9,34 @@ $user_id = $_POST['id'];
 $name = $_POST['name'];
 $email = $_POST['email'];
 
-try {
-    // Create connection using PDO
-    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+// Create connection using MySQLi
+$conn = new mysqli($servername, $username, $password, $dbname);
 
-    // Update query
-    $sql = "UPDATE users SET name = :name, email = :email WHERE id = :id";
-    $stmt = $conn->prepare($sql);
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 
+// Update query
+$sql = "UPDATE users SET name = ?, email = ? WHERE id = ?";
+$stmt = $conn->prepare($sql);
+
+if ($stmt) {
     // Bind parameters to prevent SQL injection
-    $stmt->bindParam(':name', $name);
-    $stmt->bindParam(':email', $email);
-    $stmt->bindParam(':id', $user_id);
+    $stmt->bind_param("ssi", $name, $email, $user_id);
 
     // Execute the query
-    $stmt->execute();
+    if ($stmt->execute()) {
+        echo "User updated successfully";
+    } else {
+        echo "Error: " . $stmt->error;
+    }
 
-    echo "User updated successfully";
-}
-catch(PDOException $e) {
-    echo "Error: " . $e->getMessage();
+    $stmt->close(); // Close statement
+} else {
+    echo "Error preparing statement: " . $conn->error;
 }
 
 // Close connection
-$conn = null;
+$conn->close();
 ?>

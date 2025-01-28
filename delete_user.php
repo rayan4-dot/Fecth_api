@@ -7,27 +7,34 @@ $dbname = "kudo";
 // Get the user ID from the URL (GET request)
 $user_id = $_GET['id'];
 
-try {
-    // Create connection using PDO
-    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+// Create connection using MySQLi
+$conn = new mysqli($servername, $username, $password, $dbname);
 
-    // Delete query
-    $sql = "DELETE FROM users WHERE id = :id";
-    $stmt = $conn->prepare($sql);
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 
+// Delete query
+$sql = "DELETE FROM users WHERE id = ?";
+$stmt = $conn->prepare($sql);
+
+if ($stmt) {
     // Bind parameter to prevent SQL injection
-    $stmt->bindParam(':id', $user_id);
+    $stmt->bind_param("i", $user_id);
 
     // Execute the query
-    $stmt->execute();
+    if ($stmt->execute()) {
+        echo "User deleted successfully";
+    } else {
+        echo "Error: " . $stmt->error;
+    }
 
-    echo "User deleted successfully";
-}
-catch(PDOException $e) {
-    echo "Error: " . $e->getMessage();
+    $stmt->close(); // Close statement
+} else {
+    echo "Error preparing statement: " . $conn->error;
 }
 
 // Close connection
-$conn = null;
+$conn->close();
 ?>

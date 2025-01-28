@@ -38,29 +38,34 @@ if (move_uploaded_file($image['tmp_name'], $target_file)) {
     exit;
 }
 
-// Create connection using PDO
-try {
-    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+// Create connection using MySQLi
+$conn = new mysqli($servername, $username, $password, $dbname);
 
-    // Insert query to store user info and image path
-    $sql = "INSERT INTO users (name, email, image) VALUES (:name, :email, :image)";
-    $stmt = $conn->prepare($sql);
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
 
+// Insert query to store user info and image path
+$sql = "INSERT INTO users (name, email, image) VALUES (?, ?, ?)";
+$stmt = $conn->prepare($sql);
+
+if ($stmt) {
     // Bind parameters to prevent SQL injection
-    $stmt->bindParam(':name', $name);
-    $stmt->bindParam(':email', $email);
-    $stmt->bindParam(':image', $target_file); // Store the path of the uploaded image
+    $stmt->bind_param("sss", $name, $email, $target_file);
 
     // Execute the query
-    $stmt->execute();
+    if ($stmt->execute()) {
+        header("Location: index.html"); // Redirect to the users list
+    } else {
+        echo "Error: " . $stmt->error;
+    }
 
-    header("Location: index.html"); // Redirect to the users list
-}
-catch(PDOException $e) {
-    echo "Error: " . $e->getMessage();
+    $stmt->close(); // Close statement
+} else {
+    echo "Error preparing statement: " . $conn->error;
 }
 
 // Close connection
-$conn = null;
+$conn->close();
 ?>

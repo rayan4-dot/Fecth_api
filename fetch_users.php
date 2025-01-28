@@ -4,25 +4,27 @@ $username = "root";  // Replace with your MySQL username
 $password = "";      // Replace with your MySQL password
 $dbname = "kudo";
 
-// Create connection using PDO
-try {
-    $conn = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+// Create connection using MySQLi
+$conn = new mysqli($servername, $username, $password, $dbname);
 
-    // SQL query to fetch all users
-    $sql = "SELECT id, name, email, image FROM users";
-    $stmt = $conn->prepare($sql);
-    $stmt->execute();
+// Check connection
+if ($conn->connect_error) {
+    die(json_encode(['message' => 'Connection failed: ' . $conn->connect_error]));
+}
 
-    $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// SQL query to fetch all users
+$sql = "SELECT id, name, email, image FROM users";
+$result = $conn->query($sql);
+
+if ($result) {
+    $users = $result->fetch_all(MYSQLI_ASSOC);
 
     // Return data as JSON
     echo json_encode($users);
-}
-catch(PDOException $e) {
-    echo json_encode(['message' => 'Error: ' . $e->getMessage()]);
+} else {
+    echo json_encode(['message' => 'Error: ' . $conn->error]);
 }
 
 // Close the connection
-$conn = null;
+$conn->close();
 ?>
